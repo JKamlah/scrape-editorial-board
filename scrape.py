@@ -80,8 +80,8 @@ def main(args):
 
     # the main loop
     for idx in range(args.startindex,args.endindex):
-        #url = f"https://beta.springer.com/journal/12186/editors"
-        url = f"https://beta.springer.com/journal/{idx}/editors"
+        url = f"https://beta.springer.com/journal/12186/editors"
+        #url = f"https://beta.springer.com/journal/{idx}/editors"
         html = request_html(url)
         if html is not None:
             items = find_refs(html,args.pattern)
@@ -90,7 +90,7 @@ def main(args):
                 if result is not None:
                     results[idx] = result
         jobs += 1
-
+        break
         # display some progress stats
         if True:
             if jobs > 0 and jobs % 10 == 0:
@@ -100,8 +100,8 @@ def main(args):
                 print("Resolved %d jobs in %s. %d jobs, %s remaining" % (
                     jobs, duration_string(duration), c, duration_string(seconds_per_job * c)))
     with open('results.json', 'w',encoding="utf-8") as writeFile:
-         json.dump(results,writeFile, indent=4)
-    with open('results.csv', 'w') as writeFile:
+         json.dump(results,writeFile, indent=4,ensure_ascii=False)
+    with open('results.csv', 'w',encoding="utf-8") as writeFile:
         f = csv.writer(writeFile)
         # Write CSV Header, If you dont need that, remove this line
         f.writerow(["ID", "Title", "Subtitle", "Reference"])
