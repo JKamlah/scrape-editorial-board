@@ -80,8 +80,8 @@ def main(args):
 
     # the main loop
     for idx in range(args.startindex,args.endindex):
-        url = f"https://beta.springer.com/journal/12186/editors"
-        #url = f"https://beta.springer.com/journal/{idx}/editors"
+        #url = f"https://beta.springer.com/journal/12186/editors"
+        url = f"https://beta.springer.com/journal/{idx}/editors"
         html = request_html(url)
         if html is not None:
             items = find_refs(html,args.pattern)
@@ -90,7 +90,6 @@ def main(args):
                 if result is not None:
                     results[idx] = result
         jobs += 1
-        break
         # display some progress stats
         if True:
             if jobs > 0 and jobs % 10 == 0:
