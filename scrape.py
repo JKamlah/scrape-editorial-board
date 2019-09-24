@@ -9,7 +9,6 @@ import json
 import re
 import csv
 
-
 def wait(t):
     """Wait for a random time interval"""
     time.sleep(t)
@@ -98,6 +97,16 @@ def main(args):
                 c = (args.endindex-args.startindex)-jobs
                 print("Resolved %d jobs in %s. %d jobs, %s remaining" % (
                     jobs, duration_string(duration), c, duration_string(seconds_per_job * c)))
+            if jobs > 0 and jobs % 500 == 0:
+                with open('results.json', 'w', encoding="utf-8") as writeFile:
+                    json.dump(results, writeFile, indent=4, ensure_ascii=False)
+                with open('results.csv', 'w', encoding="utf-8") as writeFile:
+                    f = csv.writer(writeFile)
+                    # Write CSV Header, If you dont need that, remove this line
+                    f.writerow(["ID", "Title", "Subtitle", "Reference"])
+                    for idx, result in results.items():
+                        for ref in result:
+                            f.writerow([ref["id"], ref["title"], ref["subtitle"], ref["reference"]])
     with open('results.json', 'w',encoding="utf-8") as writeFile:
          json.dump(results,writeFile, indent=4,ensure_ascii=False)
     with open('results.csv', 'w',encoding="utf-8") as writeFile:
@@ -119,7 +128,7 @@ if __name__ == "__main__":
          type=int, default=0,
          help="Scraping startindex")
     argparser.add_argument("-e", "--endindex", dest="endindex",
-         type=int, default=13000,
+         type=int, default=25000,
          help="Scraping endindex")
     argparser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
         help="Give verbose output")
