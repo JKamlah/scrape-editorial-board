@@ -9,9 +9,11 @@ import json
 import re
 import csv
 
+
 def wait(t):
     """Wait for a random time interval"""
     time.sleep(t)
+
 
 def duration_string(sec):
     """Formats a time interval to a readable string"""
@@ -24,7 +26,8 @@ def duration_string(sec):
         return "%.1f minutes" % (sec / float(60))
     return "%d seconds" % sec
 
-def extract_info(items,journalidx,pattern):
+
+def extract_info(items, journalidx, pattern):
     """Extracts journal titel, subtitle and reference text"""
     info = []
     # Get journal titel and subtitle
@@ -34,7 +37,7 @@ def extract_info(items,journalidx,pattern):
     else:
         title = title[0].text
     subtitle = items[0].xpath(f'preceding::p[@class="c-journal-header__subtitle"]')
-    if not subtitle :
+    if not subtitle:
         subtitle = ""
     else:
         subtitle = subtitle[0].text
@@ -44,21 +47,25 @@ def extract_info(items,journalidx,pattern):
             continue
         findings = re.finditer(fr'{pattern}', text)
         for finding in findings:
-            start = finding.start()-50 if finding.start()>50 else 0
-            end = finding.end()+30 if finding.end()<len(text) else len(text)
-            info.append({"id":journalidx,
-                     "title": title,
-                     "subtitle": subtitle,
-                     "reference": "[..]"+text[start:end]+"[..]"})
+            start = finding.start() - 50 if finding.start() > 50 else 0
+            end = finding.end() + 30 if finding.end() < len(text) else len(text)
+            info.append({
+                "id": journalidx,
+                "title": title,
+                "subtitle": subtitle,
+                "reference": "[..]"+text[start:end]+"[..]"
+            })
     return info
 
-def find_refs(html,pattern):
+
+def find_refs(html, pattern):
     """Search for references with pattern"""
     html = etree.fromstring(html.text)
     res = html.xpath(f'.//p[contains(.,"{pattern}")]')
     if res:
         return res
     return None
+
 
 def request_html(url):
     session = requests.Session()
@@ -68,24 +75,36 @@ def request_html(url):
     except requests.exceptions.RequestException as e:
         if args.verbose:
             sys.stderr.write("Error: %s.\n" % e)
-        return 
+        return
+
+
+def output(results):
+    with open('results.json', 'w', encoding="utf-8") as writeFile:
+        json.dump(results, writeFile, indent=4, ensure_ascii=False)
+    with open('results.csv', 'w', encoding="utf-8", newline='') as writeFile:
+        f = csv.writer(writeFile)
+        # Write CSV Header, If you dont need that, remove this line
+        f.writerow(["ID", "Title", "Subtitle", "Reference"])
+        for idx, result in results.items():
+            for ref in result:
+                f.writerow([ref["id"], ref["title"], ref["subtitle"], ref["reference"]])
 
 
 def main(args):
-     # init results
+    # init results
     results = defaultdict()
     starttime = time.time()
     jobs = 0
 
     # the main loop
-    for idx in range(args.startindex,args.endindex):
-        #url = f"https://beta.springer.com/journal/12186/editors"
+    for idx in range(args.startindex, args.endindex):
+        # url = f"https://beta.springer.com/journal/12186/editors"
         url = f"https://beta.springer.com/journal/{idx}/editors"
         html = request_html(url)
         if html is not None:
-            items = find_refs(html,args.pattern)
+            items = find_refs(html, args.pattern)
             if items is not None:
-                result = extract_info(items,idx,args.pattern)
+                result = extract_info(items, idx, args.pattern)
                 if result is not None:
                     results[idx] = result
         jobs += 1
@@ -98,39 +117,31 @@ def main(args):
                 print("Resolved %d jobs in %s. %d jobs, %s remaining" % (
                     jobs, duration_string(duration), c, duration_string(seconds_per_job * c)))
             if jobs > 0 and jobs % 500 == 0:
-                with open('results.json', 'w', encoding="utf-8") as writeFile:
-                    json.dump(results, writeFile, indent=4, ensure_ascii=False)
-                with open('results.csv', 'w', encoding="utf-8") as writeFile:
-                    f = csv.writer(writeFile)
-                    # Write CSV Header, If you dont need that, remove this line
-                    f.writerow(["ID", "Title", "Subtitle", "Reference"])
-                    for idx, result in results.items():
-                        for ref in result:
-                            f.writerow([ref["id"], ref["title"], ref["subtitle"], ref["reference"]])
-    with open('results.json', 'w',encoding="utf-8") as writeFile:
-         json.dump(results,writeFile, indent=4,ensure_ascii=False)
-    with open('results.csv', 'w',encoding="utf-8") as writeFile:
-        f = csv.writer(writeFile)
-        # Write CSV Header, If you dont need that, remove this line
-        f.writerow(["ID", "Title", "Subtitle", "Reference"])
-        for idx,result in results.items():
-            for ref in result:
-                f.writerow([ref["id"], ref["title"], ref["subtitle"], ref["reference"]])
+                output(results)
+    output(results)
 
 
 if __name__ == "__main__":
     # set up command line options
     argparser = argparse.ArgumentParser()
-    argparser.add_argument("-p", "--pattern", dest="pattern",
-       type=str, default="Mannheim",
-         help="")
-    argparser.add_argument("-s", "--startindex", dest="startindex",
-         type=int, default=0,
-         help="Scraping startindex")
-    argparser.add_argument("-e", "--endindex", dest="endindex",
-         type=int, default=25000,
-         help="Scraping endindex")
-    argparser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
-        help="Give verbose output")
+    argparser.add_argument(
+        "-p", "--pattern", dest="pattern",
+        type=str, default="Mannheim",
+        help=""
+    )
+    argparser.add_argument(
+        "-s", "--startindex", dest="startindex",
+        type=int, default=0,
+        help="Scraping startindex"
+    )
+    argparser.add_argument(
+        "-e", "--endindex", dest="endindex",
+        type=int, default=25000,
+        help="Scraping endindex"
+    )
+    argparser.add_argument(
+        "-v", "--verbose", dest="verbose", action="store_true",
+        help="Give verbose output"
+    )
     args = argparser.parse_args()
     main(args)
