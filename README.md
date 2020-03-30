@@ -1,7 +1,7 @@
 # Scrape editorial-board
 Scraping editorial boards of journals
 
-## Worfklow
+## Workflow
 
 -  Scrape every editorial boards and store information if a certain patterns (-p paramter) contains
 -  Stores automatically every scraped page locally
